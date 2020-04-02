@@ -64,8 +64,10 @@ module.exports.templateTags = [
             }
 
             const hmac = crypto.createHmac(algorithm, key);
+            // console.log('bearer', bearer);
 
             const time = Date.now().toString();
+            // const time = '1585068666450';
             // console.log('time', time);
             hmac.update(time);
             const request = await context.util.models.request.getById(
@@ -91,10 +93,15 @@ module.exports.templateTags = [
             const body = request.body.text;
             // console.log('body', body);
             if (body) {
+                const realBody = await context.util.render(body);
+                // console.log('realBody', realBody);
                 const contentHash = crypto.createHash("md5");
-                contentHash.update(JSON.stringify(JSON.parse(body)));
-                hmac.update(contentHash.digest(encoding));
-                // console.log('contentHash', contentHash.digest(encoding));
+                const bodyString = jsonObjectToKeepOrderString(JSON.parse(realBody));
+                contentHash.update(bodyString);
+                const bodyDigest = contentHash.digest(encoding).replace(/\s+/g,'')
+                hmac.update(bodyDigest);
+                // console.log('bodyString', bodyString);
+                // console.log('bodyDigest', bodyDigest);
             }
             const result = hmac.digest(encoding);
             // console.log('result', encoding , result);
@@ -104,3 +111,25 @@ module.exports.templateTags = [
         },
     },
 ];
+
+function jsonObjectToKeepOrderString(obj) {
+    // console.log('jsonObjectToKeepOrderString', typeof obj, obj);
+    // if (typeof obj === 'string') {
+    //     return obj;
+    // }
+    if (Array.isArray(obj)) {
+        // console.log('jsonObjectToKeepOrderString array', obj);
+        return obj
+            .filter(v => v !== undefined)
+            .map(v => jsonObjectToKeepOrderString(v))
+            .sort()
+            .join('');
+    } else if (typeof obj === 'object') {
+        return Object.keys(obj)
+            .filter(k => obj[k] !== undefined)
+            .map(k => k + ':' + jsonObjectToKeepOrderString(obj[k]))
+            .sort()
+            .join('');
+    }
+    return obj;
+}

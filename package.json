@@ -1,6 +1,6 @@
 {
   "name": "insomnia-plugin-cairn-hmac-auth",
-  "version": "1.0.3",
+  "version": "1.0.5",
   "description": "An Insomnia plugin to handle HMAC authentication",
   "main": "index.js",
   "scripts": {
